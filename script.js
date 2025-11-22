@@ -127,7 +127,7 @@ async function fetchProducts() {
     }
 }
 
-// --- 3. إرسال الطلب وإنقاص المخزون ---
+// --- 3. إرسال الطلب (معدل ليتوافق مع NUMERIC) ---
 document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -135,50 +135,56 @@ document.getElementById('checkoutForm').addEventListener('submit', async functio
     btn.innerText = "جاري المعالجة...";
     btn.disabled = true;
 
+    // 1. تجهيز اسم المنتجات كنص
     const productSummary = cart.map(item => item.name).join(" + ");
-    const totalPrice = document.getElementById('total-price').innerText;
+
+    // 2. حساب السعر كرقم صافي (لحل مشكلة الخطأ 400)
+    let numericTotal = 0;
+    cart.forEach(item => {
+        // حذف "د.ع" والفواصل وتحويله لرقم
+        let priceClean = parseFloat(item.price.replace(/[^0-9.-]+/g,""));
+        numericTotal += priceClean;
+    });
 
     const orderData = {
         customer_name: document.getElementById('customer_name').value,
         customer_phone: document.getElementById('customer_phone').value,
         customer_address: document.getElementById('customer_address').value,
         product_name: productSummary,
-        price: totalPrice,
+        price: numericTotal, // ✅ الآن نرسل رقماً صافياً (مثلاً 12500) وليس نصاً
     };
 
     try {
-        // 1. تسجيل الطلب في جدول الطلبات
+        // إرسال الطلب
         const { error: orderError } = await supabase
             .from('orders')
             .insert([orderData]);
 
         if (orderError) throw orderError;
 
-        // 2. إنقاص المخزون لكل منتج في السلة
-        // نستخدم حلقة تكرار لاستدعاء الدالة التي أنشأناها في قاعدة البيانات
+        // إنقاص المخزون
         for (const item of cart) {
             const { error: rpcError } = await supabase
                 .rpc('decrease_stock', { row_id: item.productId });
             
-            if (rpcError) console.error("خطأ في إنقاص المخزون للمنتج:", item.name, rpcError);
+            if (rpcError) console.error("Stock update failed for:", item.name);
         }
 
         alert("تم الطلب بنجاح! سيتم توصيل طلبيتك قريباً.");
         
-        // تفريغ السلة وإعادة التوجيه
+        // إعادة تعيين السلة والموقع
         cart = [];
         saveCart();
         updateCartUI();
         toggleCart();
         e.target.reset(); 
         document.getElementById('checkoutForm').style.display = 'none';
-        
-        // إعادة تحميل المنتجات لتحديث أرقام المخزون في الصفحة
         fetchProducts();
 
     } catch (err) {
         console.error("Checkout Error:", err);
-        alert("حدث خطأ أثناء الطلب، يرجى المحاولة مرة أخرى.");
+        // عرض رسالة الخطأ للمستخدم
+        alert("حدث خطأ في البيانات:\n" + (err.message || JSON.stringify(err)));
     } finally {
         btn.innerText = "تأكيد الطلب (دفع عند الاستلام)";
         btn.disabled = false;
@@ -186,3 +192,4 @@ document.getElementById('checkoutForm').addEventListener('submit', async functio
 });
 
 document.addEventListener('DOMContentLoaded', fetchProducts);
+
