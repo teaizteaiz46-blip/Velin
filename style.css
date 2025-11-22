@@ -415,4 +415,122 @@ footer {
 .form-group input:focus, 
 .form-group textarea:focus {
     border-color: var(--primary-color);
+
+}
+
+/* ... (احتفظ بالأكواد السابقة للكروت والخطوط) ... */
+
+/* --- تصميم أيقونة السلة في الهيدر --- */
+.cart-icon {
+    position: relative;
+    cursor: pointer;
+    margin-right: 20px;
+    font-size: 1.4rem;
+    color: var(--dark-color);
+}
+
+.cart-icon span {
+    position: absolute;
+    top: -8px;
+    right: -10px;
+    background-color: #ff4757;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+/* --- تصميم نافذة السلة الجانبية (Side Drawer) --- */
+.cart-modal {
+    position: fixed;
+    top: 0;
+    left: 0; /* تظهر من اليسار */
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: none; /* مخفية */
+    justify-content: flex-start; /* لتبدأ من اليسار */
+}
+
+.cart-content {
+    background-color: white;
+    width: 350px;
+    max-width: 80%;
+    height: 100%;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    animation: slideRight 0.3s ease;
+}
+
+@keyframes slideRight {
+    from {transform: translateX(-100%);}
+    to {transform: translateX(0);}
+}
+
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.close-cart {
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+/* --- عناصر السلة --- */
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.cart-item-info h4 {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.cart-item-info p {
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.remove-item {
+    color: #ff4757;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.cart-total {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 2px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.checkout-form {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 10px;
 }
