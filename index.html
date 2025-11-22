@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>فيلين | Velin - متجرك المتكامل</title>
+    <title>فيلين | Velin - متجر عصري</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -14,74 +14,39 @@
     <header>
         <div class="container nav-container">
             <a href="#" class="logo">فيلين <span>.Velin</span></a>
-            <nav>
-                <ul>
-                    <li><a href="#hero">الرئيسية</a></li>
-                    <li><a href="#products-section">المنتجات</a></li>
-                </ul>
+            <div class="header-actions">
                 <div class="cart-icon" onclick="toggleCart()">
                     <i class="fa-solid fa-cart-shopping"></i>
                     <span id="cart-count">0</span>
                 </div>
-            </nav>
+            </div>
         </div>
     </header>
 
-    <section class="hero" id="hero">
+    <section class="hero">
         <div class="container hero-content">
             <div class="hero-text">
-                <h1>تسوقي أحدث صيحات الموضة مع <span class="highlight">فيلين</span></h1>
-                <p>اجمعي منتجاتك المفضلة في سلة واحدة واطلبيها بكل سهولة.</p>
-                <div class="hero-btns">
-                    <a href="#products-section" class="btn btn-primary">تصفح المنتجات</a>
-                </div>
-            </div>
-            <div class="hero-image">
-                <img src="https://pajxormplmloivyankji.supabase.co/storage/v1/object/public/hijabat/VelinLogo.png" alt="صورة تطبيق فيلين">
+                <h1>أحدث الموديلات <span class="highlight">وصلت!</span></h1>
+                <p>تسوقي بذكاء واحصلي على أفضل المنتجات بأسعار تنافسية.</p>
             </div>
         </div>
     </section>
 
     <section class="products-section" id="products-section">
         <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">تشكيلة المنتجات</h2>
-                <p>اختاري ما يناسب ذوقك الرفيع</p>
-            </div>
+            <h2 class="section-title">المجموعة الجديدة</h2>
+            
             <div id="products-grid" class="products-grid">
-                <div class="loading-spinner">جاري تحميل المنتجات...</div>
+                </div>
+
+            <div id="sentinel" class="loading-trigger">
+                <div class="loader"></div>
+                <p>جاري تحميل المزيد...</p>
             </div>
+            
+            <p id="end-of-products" style="display: none; text-align: center; color: #777;">وصلت لنهاية القائمة</p>
         </div>
     </section>
-
-    <section class="features" id="features">
-        <div class="container">
-            <h2 class="section-title">لماذا فيلين؟</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <i class="fa-solid fa-rocket"></i>
-                    <h3>توصيل سريع</h3>
-                </div>
-                <div class="feature-card">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <h3>دفع عند الاستلام</h3>
-                </div>
-                <div class="feature-card">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <h3>جودة عالية</h3>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer>
-        <div class="container footer-content">
-            <div class="footer-logo">
-                <h2>فيلين .Velin</h2>
-                <p>جميع الحقوق محفوظة © 2025</p>
-            </div>
-        </div>
-    </footer>
 
     <div id="cartModal" class="cart-modal">
         <div class="cart-content">
@@ -89,31 +54,24 @@
                 <h3>سلة المشتريات</h3>
                 <span class="close-cart" onclick="toggleCart()">&times;</span>
             </div>
+            <div id="cart-items" class="cart-items-container"></div>
             
-            <div id="cart-items" class="cart-items-container">
-                <p class="empty-msg">السلة فارغة حالياً</p>
-            </div>
-
-            <div class="cart-total">
-                <span>المجموع الكلي:</span>
-                <span id="total-price">0 د.ع</span>
-            </div>
-
-            <form id="checkoutForm" class="checkout-form" style="display: none;">
-                <h4>معلومات التوصيل</h4>
-                <div class="form-group">
+            <div class="cart-footer">
+                <div class="cart-total">
+                    <span>المجموع:</span>
+                    <span id="total-price">0 د.ع</span>
+                </div>
+                
+                <button id="show-checkout-btn" class="btn btn-primary w-100" onclick="showCheckout()">إتمام الشراء</button>
+                
+                <form id="checkoutForm" class="checkout-form" style="display: none;">
+                    <h4>معلومات التوصيل</h4>
                     <input type="text" id="customer_name" required placeholder="الاسم الكامل">
-                </div>
-                <div class="form-group">
-                    <input type="tel" id="customer_phone" required placeholder="رقم الهاتف (07xxxx)">
-                </div>
-                <div class="form-group">
-                    <textarea id="customer_address" rows="2" required placeholder="العنوان الكامل"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">تأكيد الطلب (دفع عند الاستلام)</button>
-            </form>
-
-            <button id="show-checkout-btn" class="btn btn-primary w-100" onclick="showCheckout()" style="display: none;">إتمام الشراء</button>
+                    <input type="tel" id="customer_phone" required placeholder="رقم الهاتف">
+                    <textarea id="customer_address" required placeholder="العنوان بالتفصيل (المحافظة/المنطقة)"></textarea>
+                    <button type="submit" class="btn btn-primary w-100">تأكيد الطلب</button>
+                </form>
+            </div>
         </div>
     </div>
 
