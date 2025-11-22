@@ -1,41 +1,119 @@
 // ⚠️ 1. إعدادات الاتصال (انسخها من لوحة تحكم Supabase -> Settings -> API)
 const SUPABASE_URL = 'https://pajxormplmloivyankji.supabase.co'; // ضع رابطك هنا
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhanhvcm1wbG1sb2l2eWFua2ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODQ3OTksImV4cCI6MjA3NjA2MDc5OX0.eEPB_Gt5HywU9oGNXLpSNc4IA7CTTL7CX-EMKDE3yec'; // ضع مفتاح anon/public هنا
-
-// ⚠️ تأكد من وضع مفاتيحك الصحيحة هنا
-
+// ⚠️ إعدادات Supabase (نفس مفاتيحك السابقة)
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- 1. دالة جلب المنتجات ---
+// --- 1. إدارة السلة (Cart Logic) ---
+let cart = JSON.parse(localStorage.getItem('velin_cart')) || [];
+
+// تحديث أيقونة السلة عند التحميل
+updateCartUI();
+
+// دالة إضافة للسلة
+function addToCart(name, price) {
+    const product = { name, price, id: Date.now() }; // id مميز لكل قطعة
+    cart.push(product);
+    saveCart();
+    updateCartUI();
+    
+    // تنبيه بسيط
+    alert('تمت إضافة ' + name + ' إلى السلة');
+}
+
+// حذف من السلة
+function removeFromCart(id) {
+    cart = cart.filter(item => item.id !== id);
+    saveCart();
+    updateCartUI();
+}
+
+// حفظ في الذاكرة المحلية
+function saveCart() {
+    localStorage.setItem('velin_cart', JSON.stringify(cart));
+}
+
+// تحديث الواجهة (الرقم والقائمة)
+function updateCartUI() {
+    // 1. تحديث الرقم الأحمر
+    document.getElementById('cart-count').innerText = cart.length;
+
+    // 2. تحديث قائمة المنتجات داخل النافذة
+    const cartContainer = document.getElementById('cart-items');
+    const totalPriceEl = document.getElementById('total-price');
+    const checkoutBtn = document.getElementById('show-checkout-btn');
+    
+    cartContainer.innerHTML = '';
+    let total = 0;
+
+    if (cart.length === 0) {
+        cartContainer.innerHTML = '<p class="empty-msg">السلة فارغة، أضيفي بعض المنتجات!</p>';
+        checkoutBtn.style.display = 'none';
+    } else {
+        cart.forEach(item => {
+            // تحويل السعر لرقم للجمع
+            let priceNum = parseFloat(item.price.replace(/[^0-9.-]+/g,""));
+            total += priceNum;
+
+            cartContainer.innerHTML += `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <h4>${item.name}</h4>
+                        <p>${item.price} د.ع</p>
+                    </div>
+                    <span class="remove-item" onclick="removeFromCart(${item.id})">
+                        <i class="fa-solid fa-trash"></i>
+                    </span>
+                </div>
+            `;
+        });
+        checkoutBtn.style.display = 'block';
+    }
+
+    totalPriceEl.innerText = total.toLocaleString() + ' د.ع';
+}
+
+// فتح وإغلاق السلة
+function toggleCart() {
+    const modal = document.getElementById('cartModal');
+    if (modal.style.display === 'flex') {
+        modal.style.display = 'none';
+    } else {
+        modal.style.display = 'flex';
+    }
+}
+
+function showCheckout() {
+    document.getElementById('checkoutForm').style.display = 'block';
+    document.getElementById('show-checkout-btn').style.display = 'none';
+}
+
+
+// --- 2. دالة جلب المنتجات ---
 async function fetchProducts() {
     const productsContainer = document.getElementById('products-grid');
     
     try {
         let { data: products, error } = await supabase
-            .from('products') // تأكد من اسم الجدول
+            .from('products')
             .select('*');
 
         if (error) throw error;
 
         productsContainer.innerHTML = '';
 
-        if (!products || products.length === 0) {
-            productsContainer.innerHTML = '<p>لا توجد منتجات حالياً.</p>';
-            return;
-        }
-
         products.forEach(product => {
             const imageUrl = product.image_url || 'https://via.placeholder.com/250';
             
-            // قمنا بإضافة زر "اطلب الآن" الذي يستدعي دالة openModal
+            // زر "أضف للسلة" بدلاً من "اطلب الآن"
             const productHTML = `
                 <div class="product-card">
                     <img src="${imageUrl}" alt="${product.name}" class="product-image">
                     <div class="product-info">
                         <h3 class="product-title">${product.name}</h3>
                         <p class="product-price">${product.price} د.ع</p>
-                        <button onclick="openModal('${product.name}', '${product.price}')" class="btn btn-primary" style="width:100%; margin-top:10px;">
-                            اطلب الآن <i class="fa-solid fa-cart-shopping"></i>
+                        <button onclick="addToCart('${product.name}', '${product.price}')" class="btn btn-primary w-100">
+                            أضف للسلة <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
                 </div>
@@ -49,71 +127,50 @@ async function fetchProducts() {
     }
 }
 
-// --- 2. دوال النافذة المنبثقة (Modal) ---
-const modal = document.getElementById('orderModal');
-
-// فتح النافذة وتعبئة بيانات المنتج المخفية
-function openModal(productName, productPrice) {
-    document.getElementById('modal-product-name').innerText = productName + " - " + productPrice + " د.ع";
-    
-    // تخزين البيانات في حقول مخفية لنرسلها لاحقاً
-    document.getElementById('hidden_product_name').value = productName;
-    document.getElementById('hidden_product_price').value = productPrice;
-    
-    modal.style.display = 'flex';
-}
-
-// إغلاق النافذة
-function closeModal() {
-    modal.style.display = 'none';
-}
-
-// إغلاق النافذة عند الضغط خارجها
-window.onclick = function(event) {
-    if (event.target == modal) {
-        closeModal();
-    }
-}
-
-// --- 3. دالة إرسال الطلب إلى Supabase ---
-document.getElementById('orderForm').addEventListener('submit', async function(e) {
-    e.preventDefault(); // منع إعادة تحميل الصفحة
+// --- 3. إرسال الطلب (المنتجات كلها مرة واحدة) ---
+document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
     
     const btn = e.target.querySelector('button');
-    const originalText = btn.innerText;
     btn.innerText = "جاري الإرسال...";
     btn.disabled = true;
 
-    // جمع البيانات
+    // تحويل قائمة المنتجات إلى نص واحد (مثلاً: حجاب x2, عباية x1)
+    const productSummary = cart.map(item => item.name).join(" + ");
+    const totalPrice = document.getElementById('total-price').innerText;
+
     const orderData = {
         customer_name: document.getElementById('customer_name').value,
         customer_phone: document.getElementById('customer_phone').value,
         customer_address: document.getElementById('customer_address').value,
-        product_name: document.getElementById('hidden_product_name').value,
-        price: document.getElementById('hidden_product_price').value,
-        // created_at يتم إضافته تلقائياً من Supabase
+        product_name: productSummary, // نرسل كل المنتجات في حقل الاسم
+        price: totalPrice,            // نرسل المجموع الكلي
     };
 
     try {
-        // إرسال لجدول orders
         const { error } = await supabase
             .from('orders')
             .insert([orderData]);
 
         if (error) throw error;
 
-        alert("تم استلام طلبك بنجاح! سنتواصل معك قريباً.");
-        closeModal();
-        e.target.reset(); // مسح الحقول
+        alert("تم استلام طلبك بنجاح! شكراً لتسوقك مع فيلين.");
+        
+        // تفريغ السلة
+        cart = [];
+        saveCart();
+        updateCartUI();
+        toggleCart(); // إغلاق النافذة
+        e.target.reset(); 
+        document.getElementById('checkoutForm').style.display = 'none';
 
     } catch (err) {
         console.error("Order Error:", err);
-        alert("حدث خطأ أثناء إرسال الطلب، يرجى المحاولة مرة أخرى.");
+        alert("حدث خطأ، يرجى المحاولة مرة أخرى.");
     } finally {
-        btn.innerText = originalText;
+        btn.innerText = "تأكيد الطلب";
         btn.disabled = false;
     }
 });
 
-// تشغيل الموقع
 document.addEventListener('DOMContentLoaded', fetchProducts);
