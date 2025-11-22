@@ -128,7 +128,7 @@
         const limit = 10;
         let hasMore = true;
         let isLoading = false;
-        const DELIVERY_FEE = 3000; // سعر التوصيل
+        const DELIVERY_FEE = 3000;
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchProducts();
@@ -141,43 +141,40 @@
         });
 
         // 1. جلب المنتجات
-   // 1. جلب المنتجات (تم تعديلها لتجلب فقط ما هو أكبر من صفر)
-async function fetchProducts() {
-    if (isLoading || !hasMore) return;
-    isLoading = true;
-    
-    // إظهار اللودر
-    const loader = document.querySelector('#sentinel .loader');
-    if(loader) loader.style.display = 'block';
+        async function fetchProducts() {
+            if (isLoading || !hasMore) return;
+            isLoading = true;
+            const loader = document.querySelector('#sentinel .loader');
+            if(loader) loader.style.display = 'block';
 
-    try {
-        let { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .gt('stock', 0) // ✅ هذا السطر هو المسؤول (stock أكبر من 0)
-            .range(offset, offset + limit - 1)
-            .order('id', { ascending: false });
+            try {
+                let { data, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .gt('stock', 0)
+                    .range(offset, offset + limit - 1)
+                    .order('id', { ascending: false });
 
-        if (error) throw error;
+                if (error) throw error;
 
-        if (data.length < limit) {
-            hasMore = false;
-            document.getElementById('end-msg').style.display = 'block';
-            document.getElementById('sentinel').style.display = 'none';
+                if (data.length < limit) {
+                    hasMore = false;
+                    document.getElementById('end-msg').style.display = 'block';
+                    document.getElementById('sentinel').style.display = 'none';
+                }
+
+                if (data.length > 0) {
+                    renderProducts(data);
+                    offset += limit;
+                }
+            } catch (err) {
+                console.error("Error:", err);
+            } finally {
+                isLoading = false;
+                if(loader) loader.style.display = 'none';
+            }
         }
 
-        if (data.length > 0) {
-            renderProducts(data);
-            offset += limit;
-        }
-    } catch (err) {
-        console.error("Error fetching products:", err);
-    } finally {
-        isLoading = false;
-        if(loader) loader.style.display = 'none';
-    }
-}
-        /////////////////////////////////////////////////////////
         function renderProducts(products) {
             const grid = document.getElementById('products-grid');
             products.forEach(p => {
@@ -190,7 +187,7 @@ async function fetchProducts() {
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
-                    <div style="height:200px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#eee;">
+                    <div style="height:200px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#f0f0f0;">
                         <img src="${img}" class="card-img" loading="lazy" 
                              onerror="this.onerror=null; this.src='https://via.placeholder.com/300';"
                              style="width:100%; height:100%; object-fit:cover;">
@@ -208,12 +205,10 @@ async function fetchProducts() {
             });
         }
 
-        // 2. تحديث السلة (تم إصلاح الخطأ هنا)
+        // 2. تحديث السلة
         function updateCartUI() {
             document.getElementById('cart-count').innerText = cart.length;
             const container = document.getElementById('cart-items-container');
-            
-            // عناصر التحكم
             const checkoutBtn = document.getElementById('checkout-btn');
             const pricingDetails = document.getElementById('pricing-details');
 
@@ -222,10 +217,10 @@ async function fetchProducts() {
             if (cart.length === 0) {
                 container.innerHTML = '<p style="text-align:center; color:#999;">السلة فارغة</p>';
                 checkoutBtn.style.display = 'none';
-                pricingDetails.style.display = 'none'; // إخفاء الأسعار
+                pricingDetails.style.display = 'none';
             } else {
                 checkoutBtn.style.display = 'block';
-                pricingDetails.style.display = 'block'; // إظهار الأسعار
+                pricingDetails.style.display = 'block';
 
                 let subTotal = 0;
                 cart.forEach(item => {
@@ -241,13 +236,11 @@ async function fetchProducts() {
                     `;
                 });
 
-                // ✅ تحديث الأماكن الثابتة بدلاً من استخدام innerHTML على الحاوية
                 document.getElementById('sub-total').innerText = subTotal.toLocaleString() + ' د.ع';
                 document.getElementById('final-total').innerText = (subTotal + DELIVERY_FEE).toLocaleString() + ' د.ع';
             }
         }
 
-        // 3. إدارة السلة
         function addToCart(id, name, price) {
             cart.push({ product_id: id, name: name, price: Number(price), temp_id: Date.now() });
             saveCart();
@@ -270,81 +263,55 @@ async function fetchProducts() {
             document.getElementById('checkout-btn').style.display = 'none';
         }
 
-        // 4. إرسال الطلب
-       // 4. إرسال الطلب (تم التعديل ليخصم من المخزون)
-// 4. إرسال الطلب (تم التصحيح لتنسيق البيانات وخصم المخزون)
-document.getElementById('checkout-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector('button');
-    const originalBtnText = btn.innerText;
-    btn.disabled = true; 
-    btn.innerText = "جاري الإرسال...";
+        // 3. إرسال الطلب (الحل الجذري للمخزون)
+        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true; 
+            btn.innerText = "جاري الإرسال...";
 
-    try {
-        // 1️⃣ حساب المجموع الكلي
-        const productsTotal = cart.reduce((sum, item) => sum + item.price, 0);
-        const finalPrice = productsTotal + DELIVERY_FEE;
+            const productsTotal = cart.reduce((sum, item) => sum + item.price, 0);
+            const finalPrice = productsTotal + DELIVERY_FEE;
 
-        // 2️⃣ تجهيز هيكل البيانات الصحيح { "product_id": quantity }
-        // هذا الكود يحول السلة من مصفوفة عادية إلى كائن يحسب عدد القطع لكل منتج
-        // النتيجة ستكون مثل: { "160": 1, "205": 3 }
-        const cartQuantities = {};
-        cart.forEach(item => {
-            const id = item.product_id;
-            if (cartQuantities[id]) {
-                cartQuantities[id] += 1; // زيادة الكمية إذا المنتج موجود
-            } else {
-                cartQuantities[id] = 1; // بداية العد بـ 1
+            // 🔥 التصحيح هنا: تحويل السلة إلى كائن { "رقم_المنتج": الكمية }
+            // هذا ما تتوقعه قاعدة البيانات لكي تنقص العدد الصحيح
+            const cartAsObject = {};
+            cart.forEach((item) => {
+                const pid = item.product_id;
+                // إذا المنتج موجود، زد الكمية، وإلا اجعلها 1
+                if (cartAsObject[pid]) {
+                    cartAsObject[pid] += 1;
+                } else {
+                    cartAsObject[pid] = 1;
+                }
+            });
+
+            const orderPayload = {
+                customer_name: document.getElementById('c_name').value,
+                customer_phone: document.getElementById('c_phone').value,
+                customer_address: document.getElementById('c_address').value,
+                price: finalPrice, 
+                cart_items: cartAsObject, // إرسال الكائن { id: qty }
+                status: 'new'
+            };
+
+            try {
+                const { error } = await supabase.from('orders').insert([orderPayload]);
+                if (error) throw error;
+
+                alert('تم الطلب بنجاح!');
+                cart = [];
+                saveCart();
+                updateCartUI();
+                toggleCart();
+                location.reload();
+            } catch (err) {
+                console.error(err);
+                alert('حدث خطأ: ' + (err.message || 'حاول مرة أخرى'));
+                btn.disabled = false;
+                btn.innerText = "تأكيد الطلب";
             }
         });
-
-        // تجهيز بيانات الطلب للإرسال لقاعدة البيانات
-        const orderPayload = {
-            customer_name: document.getElementById('c_name').value,
-            customer_phone: document.getElementById('c_phone').value,
-            customer_address: document.getElementById('c_address').value,
-            price: finalPrice, 
-            cart_items: cartQuantities, // ✅ الآن سيتم حفظها بالشكل الصحيح {"160": 1}
-            status: 'new'
-        };
-
-        // 3️⃣ إدراج الطلب في جدول orders
-        const { error: orderError } = await supabase.from('orders').insert([orderPayload]);
-        if (orderError) throw orderError;
-
-        // 4️⃣ خصم المخزون (استدعاء الدالة stock_dcreased)
-        // نرسل نفس الكائن cartQuantities للدالة لتقوم بالخصم
-        const { error: stockError } = await supabase.rpc('stock_dcreased', { 
-            cart_items: cartQuantities 
-        });
-
-        if (stockError) {
-            console.error("Warning: Stock deduction failed", stockError);
-            // لا نوقف العملية هنا لأن الطلب تم تسجيله بالفعل
-        }
-
-        // 5️⃣ إتمام العملية بنجاح
-        alert('تم الطلب بنجاح!');
-        
-        // تنظيف السلة
-        cart = [];
-        saveCart();
-        updateCartUI();
-        toggleCart(); // إغلاق السلة
-        
-        // إعادة تعيين النموذج
-        e.target.reset();
-        document.getElementById('checkout-form').style.display = 'none';
-        document.getElementById('checkout-btn').style.display = 'block';
-
-    } catch (err) {
-        console.error(err);
-        alert('حدث خطأ أثناء إرسال الطلب، يرجى المحاولة مرة أخرى.');
-    } finally {
-        btn.disabled = false;
-        btn.innerText = originalBtnText;
-    }
-});
     </script>
 </body>
 </html>
