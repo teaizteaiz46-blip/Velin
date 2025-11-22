@@ -150,19 +150,16 @@ function showCheckout() {
     document.getElementById('show-checkout-btn').style.display = 'none';
 }
 
-// === 4. إرسال الطلب (متوافق مع صورة الداتابيز) ===
-
 document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button');
     btn.disabled = true;
     btn.innerText = "جاري الإرسال...";
 
-    // حساب المجموع كرقم صافي
+    // حساب المجموع
     const numericTotal = cart.reduce((sum, item) => sum + item.price, 0);
 
-    // تجهيز عناصر السلة كـ JSON
-    // العمود في الصورة هو cart_items ونوعه jsonb
+    // تجهيز عناصر السلة
     const cartItemsJson = cart.map(item => ({
         product_id: item.productId,
         name: item.name,
@@ -173,31 +170,30 @@ document.getElementById('checkoutForm').addEventListener('submit', async functio
         customer_name: document.getElementById('customer_name').value,
         customer_phone: document.getElementById('customer_phone').value,
         customer_address: document.getElementById('customer_address').value,
-        price: numericTotal,    // ✅ رقم (numeric)
-        cart_items: cartItemsJson, // ✅ مصفوفة JSON (jsonb)
-        status: 'new' // حالة افتراضية
+        price: numericTotal,
+        cart_items: cartItemsJson, 
+        status: 'new'
     };
 
     try {
-        // 1. إرسال الطلب
+        // 1. إرسال الطلب فقط (الـ Trigger في قاعدة البيانات سيتولى إنقاص المخزون)
         const { error } = await supabase.from('orders').insert([orderData]);
+        
         if (error) throw error;
 
-        // 2. إنقاص المخزون
-        for (const item of cart) {
-            await supabase.rpc('decrease_stock', { row_id: item.productId });
-        }
-
         alert("تم الطلب بنجاح!");
+        
+        // تنظيف الواجهة
         cart = [];
         saveCart();
         updateCartUI();
         toggleCart();
-        location.reload(); // إعادة تحميل الصفحة لتحديث المخزون
+        location.reload(); 
 
     } catch (err) {
         console.error("Order Error:", err);
-        alert("حدث خطأ: " + (err.message || "تأكد من البيانات"));
+        // عرض الخطأ بشكل واضح
+        alert("حدث خطأ: " + (err.message || JSON.stringify(err)));
     } finally {
         btn.disabled = false;
         btn.innerText = "تأكيد الطلب";
@@ -212,3 +208,4 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchProducts();
     updateCartUI();
 });
+
