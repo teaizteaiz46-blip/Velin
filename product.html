@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل المنتج</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
+    <style>
+        :root { --primary: #FF5000; --bg: #eff0f5; --white: #fff; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
+        
+        /* Image Header */
+        .product-header { position: relative; background: var(--white); }
+        .main-img { width: 100%; height: 350px; object-fit: cover; }
+        .back-icon { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.3); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        /* Info Section */
+        .info-box { background: var(--white); padding: 15px; margin-bottom: 10px; }
+        .price-lg { color: var(--primary); font-size: 1.6rem; font-weight: 800; }
+        .title-lg { font-size: 1.1rem; margin: 10px 0; color: #333; line-height: 1.5; }
+        .stock-badge { background: #e6f7ff; color: #1890ff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+        /* Actions Bar */
+        .action-bar { position: fixed; bottom: 0; width: 100%; background: var(--white); display: flex; padding: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 100; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 25px; color: white; font-weight: 700; font-size: 1rem; cursor: pointer; margin: 0 5px; }
+        .btn-cart { background: #ff9900; }
+        .btn-buy { background: #FF5000; }
+        .icon-btn { width: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; color: #666; cursor: pointer; }
+        .icon-btn i { font-size: 1.2rem; margin-bottom: 2px; }
+    </style>
+</head>
+<body>
+
+    <div class="product-header">
+        <div class="back-icon" onclick="history.back()"><i class="fa-solid fa-arrow-right"></i></div>
+        <img id="p-img" src="" class="main-img">
+    </div>
+
+    <div class="info-box">
+        <div class="price-lg" id="p-price">...</div>
+        <h1 class="title-lg" id="p-name">...</h1>
+        <span class="stock-badge" id="p-stock">متوفر</span>
+    </div>
+
+    <div class="info-box">
+        <h3 style="font-size:1rem; margin-bottom:10px;">الوصف</h3>
+        <p id="p-desc" style="color:#666; line-height:1.6; font-size:0.95rem; white-space: pre-wrap;">...</p>
+    </div>
+
+    <div class="action-bar">
+        <div class="icon-btn" onclick="window.location.href='index.html'">
+            <i class="fa-solid fa-store"></i> المتجر
+        </div>
+        <button class="btn btn-cart" onclick="addToCart(false)">أضف للسلة</button>
+        <button class="btn btn-buy" onclick="addToCart(true)">شراء الآن</button>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://pajxormplmloivyankji.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhanhvcm1wbG1sb2l2eWFua2ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODQ3OTksImV4cCI6MjA3NjA2MDc5OX0.eEPB_Gt5HywU9oGNXLpSNc4IA7CTTL7CX-EMKDE3yec';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        let currentProduct = null;
+
+        async function loadProduct() {
+            if(!id) return;
+            const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+            
+            if(data) {
+                currentProduct = data;
+                let img = data.image_url ? (Array.isArray(data.image_url) ? data.image_url[0] : data.image_url.split(',')[0]) : 'https://via.placeholder.com/300';
+                
+                document.getElementById('p-img').src = img;
+                document.getElementById('p-name').innerText = data.name;
+                document.getElementById('p-price').innerText = Number(data.price).toLocaleString() + ' د.ع';
+                document.getElementById('p-desc').innerText = data.description || 'لا يوجد وصف';
+                document.getElementById('p-stock').innerText = data.stock > 0 ? `متوفر: ${data.stock}` : 'نفذت الكمية';
+            }
+        }
+
+        function addToCart(redirect) {
+            if(!currentProduct) return;
+            
+            let cart = JSON.parse(localStorage.getItem('velin_cart')) || [];
+            cart.push({
+                product_id: currentProduct.id,
+                name: currentProduct.name,
+                price: Number(currentProduct.price),
+                temp_id: Date.now()
+            });
+            localStorage.setItem('velin_cart', JSON.stringify(cart));
+            
+            if(redirect) {
+                // هنا يمكنك توجيهه لصفحة "الدفع" Checkout (يمكنك إنشاؤها لاحقاً)
+                // حالياً سنرجعه للرئيسية حيث توجد السلة
+                alert('تمت الإضافة، انتقل للسلة لإتمام الطلب');
+                window.location.href = 'index.html'; 
+            } else {
+                alert('تمت الإضافة للسلة');
+            }
+        }
+
+        loadProduct();
+    </script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>السلة | Velin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
+    <style>
+        :root { --primary: #FF5000; --text: #333; --bg: #eff0f5; --white: #fff; --danger: #ff4d4f; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; padding-bottom: 120px; color: var(--text); }
+        
+        /* Header */
+        .header { background: var(--white); padding: 15px; display: flex; align-items: center; gap: 10px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+        
+        /* Cart Items */
+        .cart-list { padding: 10px; }
+        .cart-item { background: var(--white); border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .item-details h3 { font-size: 0.95rem; margin: 0 0 5px 0; color: #222; }
+        .item-price { color: var(--primary); font-weight: 700; font-size: 1rem; }
+        .remove-btn { color: #999; background: none; border: none; padding: 5px; cursor: pointer; font-size: 1.1rem; }
+        
+        /* Empty State */
+        .empty-state { text-align: center; padding: 50px 20px; color: #999; display: none; }
+        .empty-state i { font-size: 4rem; margin-bottom: 20px; color: #ddd; }
+        
+        /* Checkout Form Section */
+        .checkout-section { background: var(--white); padding: 20px; margin: 10px; border-radius: 10px; }
+        .section-title { font-weight: 700; margin-bottom: 15px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
+        .form-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #eee; border-radius: 8px; background: #f9f9f9; font-family: inherit; box-sizing: border-box; transition: 0.3s; }
+        .form-input:focus { border-color: var(--primary); outline: none; background: #fff; }
+        
+        /* Footer Summary */
+        .cart-footer { position: fixed; bottom: 0; width: 100%; background: var(--white); padding: 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); z-index: 200; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; }
+        .price-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: #666; }
+        .total-row { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 800; color: var(--primary); margin-top: 5px; padding-top: 10px; border-top: 1px dashed #ddd; }
+        
+        .checkout-btn { width: 100%; background: linear-gradient(to right, #FF5000, #ff8e00); color: white; border: none; padding: 15px; border-radius: 30px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 5px; }
+        .checkout-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* Bottom Nav */
+        .bottom-nav { display: none; } /* نخفي النافبار هنا لأننا نريد التركيز على الدفع */
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <i class="fa-solid fa-arrow-right" style="cursor:pointer;" onclick="history.back()"></i>
+        <span>سلة التسوق</span>
+    </div>
+
+    <div id="empty-cart" class="empty-state">
+        <i class="fa-solid fa-cart-arrow-down"></i>
+        <h3>السلة فارغة</h3>
+        <p>تصفح المنتجات وأضف ما يعجبك</p>
+        <a href="index.html" style="color:var(--primary); text-decoration:none; font-weight:700;">تصفح المنتجات</a>
+    </div>
+
+    <div id="cart-items" class="cart-list">
+        </div>
+
+    <div class="checkout-section" id="shipping-form" style="display: none;">
+        <div class="section-title"><i class="fa-solid fa-truck-fast" style="color:var(--primary);"></i> معلومات التوصيل</div>
+        <input type="text" id="c_name" class="form-input" placeholder="الاسم الثلاثي" required>
+        <input type="tel" id="c_phone" class="form-input" placeholder="رقم الهاتف (مع المفتاح)" required>
+        <textarea id="c_address" class="form-input" rows="2" placeholder="العنوان الكامل (المحافظة، المنطقة، أقرب نقطة دالة)" required></textarea>
+    </div>
+
+    <div class="cart-footer" id="cart-footer" style="display: none;">
+        <div class="price-row">
+            <span>المجموع الفرعي:</span>
+            <span id="sub-total">0 د.ع</span>
+        </div>
+        <div class="price-row">
+            <span>التوصيل:</span>
+            <span>3,000 د.ع</span>
+        </div>
+        <div class="total-row">
+            <span>الإجمالي:</span>
+            <span id="final-total">0 د.ع</span>
+        </div>
+        <button class="checkout-btn" id="confirm-btn" onclick="processOrder()">تأكيد الطلب (الدفع عند الاستلام)</button>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://pajxormplmloivyankji.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhanhvcm1wbG1sb2l2eWFua2ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODQ3OTksImV4cCI6MjA3NjA2MDc5OX0.eEPB_Gt5HywU9oGNXLpSNc4IA7CTTL7CX-EMKDE3yec';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const DELIVERY_FEE = 3000;
+
+        let cart = JSON.parse(localStorage.getItem('velin_cart')) || [];
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            const footer = document.getElementById('cart-footer');
+            const empty = document.getElementById('empty-cart');
+            const form = document.getElementById('shipping-form');
+
+            container.innerHTML = '';
+
+            if (cart.length === 0) {
+                empty.style.display = 'block';
+                footer.style.display = 'none';
+                form.style.display = 'none';
+                return;
+            }
+
+            empty.style.display = 'none';
+            footer.style.display = 'flex';
+            form.style.display = 'block';
+
+            let subTotal = 0;
+
+            cart.forEach(item => {
+                subTotal += item.price;
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <div class="item-details">
+                            <h3>${item.name}</h3>
+                            <div class="item-price">${item.price.toLocaleString()} د.ع</div>
+                        </div>
+                        <button class="remove-btn" onclick="removeItem(${item.temp_id})">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+
+            document.getElementById('sub-total').innerText = subTotal.toLocaleString() + ' د.ع';
+            document.getElementById('final-total').innerText = (subTotal + DELIVERY_FEE).toLocaleString() + ' د.ع';
+        }
+
+        function removeItem(tempId) {
+            cart = cart.filter(item => item.temp_id !== tempId);
+            localStorage.setItem('velin_cart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        // 🔥 دالة معالجة الطلب وإنقاص المخزون
+        async function processOrder() {
+            const name = document.getElementById('c_name').value;
+            const phone = document.getElementById('c_phone').value;
+            const address = document.getElementById('c_address').value;
+
+            if (!name || !phone || !address) {
+                alert('يرجى ملء جميع معلومات التوصيل');
+                return;
+            }
+
+            const btn = document.getElementById('confirm-btn');
+            btn.disabled = true;
+            btn.innerText = "جاري المعالجة...";
+
+            try {
+                // 1. تحضير بيانات الطلب (تجميع الكميات)
+                const cartCounts = {};
+                cart.forEach(item => {
+                    cartCounts[item.product_id] = (cartCounts[item.product_id] || 0) + 1;
+                });
+
+                const totalPrice = cart.reduce((sum, item) => sum + item.price, 0) + DELIVERY_FEE;
+
+                // 2. إدخال الطلب في جدول orders
+                const orderData = {
+                    customer_name: name,
+                    customer_phone: phone,
+                    customer_address: address,
+                    price: totalPrice,
+                    cart_items: cartCounts,
+                    status: 'new'
+                };
+
+                const { error: orderError } = await supabase.from('orders').insert([orderData]);
+                if (orderError) throw orderError;
+
+                // 3. إنقاص المخزون (تحديث جدول products)
+                // ملاحظة: بما أن Supabase لا يدعم تحديثات متعددة في طلب واحد بسهولة من الفرونت إند، سنقوم بحلقة تكرارية
+                for (const [productId, quantity] of Object.entries(cartCounts)) {
+                    // أ. جلب المخزون الحالي
+                    const { data: product, error: fetchError } = await supabase
+                        .from('products')
+                        .select('stock')
+                        .eq('id', productId)
+                        .single();
+                    
+                    if (fetchError) {
+                        console.error(`خطأ في جلب منتج ${productId}`, fetchError);
+                        continue; 
+                    }
+
+                    // ب. حساب المخزون الجديد وتحديثه
+                    if (product) {
+                        const newStock = Math.max(0, product.stock - quantity);
+                        await supabase
+                            .from('products')
+                            .update({ stock: newStock })
+                            .eq('id', productId);
+                    }
+                }
+
+                // 4. النجاح
+                alert('تم استلام طلبك بنجاح! سيتم التواصل معك قريباً.');
+                localStorage.removeItem('velin_cart');
+                window.location.href = 'index.html'; // العودة للرئيسية
+
+            } catch (err) {
+                console.error(err);
+                alert('حدث خطأ أثناء الطلب: ' + err.message);
+                btn.disabled = false;
+                btn.innerText = "تأكيد الطلب (الدفع عند الاستلام)";
+            }
+        }
+
+        renderCart();
+    </script>
+</body>
+</html>

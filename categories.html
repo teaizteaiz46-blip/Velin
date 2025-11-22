@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فيلين | الأقسام</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
+    <style>
+        :root { --primary: #FF5000; --bg: #eff0f5; --white: #fff; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); margin: 0; padding-bottom: 60px; }
+        .header { background: var(--white); padding: 15px; text-align: center; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* Category List */
+        .cat-list { display: grid; grid-template-columns: 1fr; gap: 2px; padding-top: 10px; }
+        .cat-row { background: var(--white); padding: 15px; display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: #333; }
+        .cat-info { display: flex; align-items: center; gap: 15px; }
+        .cat-row img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #eee; }
+        .arrow { color: #ccc; }
+        
+        /* Bottom Nav (نسخ نفس النافبار في كل صفحة) */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: var(--white); border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 10px 0; }
+        .nav-item { text-align: center; color: #666; font-size: 0.8rem; text-decoration: none; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item i { font-size: 1.2rem; margin-bottom: 2px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="header">كل الأقسام</div>
+
+    <div class="cat-list" id="all-cats">
+        </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <i class="fa-solid fa-house"></i> الرئيسية
+        </a>
+        <a href="categories.html" class="nav-item active">
+            <i class="fa-solid fa-layer-group"></i> الأقسام
+        </a>
+        <div class="nav-item">
+            <i class="fa-solid fa-cart-shopping"></i> السلة
+        </div>
+    </nav>
+
+    <script>
+        const SUPABASE_URL = 'https://pajxormplmloivyankji.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhanhvcm1wbG1sb2l2eWFua2ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODQ3OTksImV4cCI6MjA3NjA2MDc5OX0.eEPB_Gt5HywU9oGNXLpSNc4IA7CTTL7CX-EMKDE3yec';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function loadCategories() {
+            const { data: cats } = await supabase.from('categories').select('*');
+            const container = document.getElementById('all-cats');
+            cats.forEach(c => {
+                container.innerHTML += `
+                    <a href="category_products.html?cat_id=${c.id}&cat_name=${c.name}" class="cat-row">
+                        <div class="cat-info">
+                            <img src="${c.image_url || 'https://via.placeholder.com/50'}" loading="lazy">
+                            <span>${c.name}</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-left arrow"></i>
+                    </a>`;
+            });
+        }
+        loadCategories();
+    </script>
+</body>
+</html>
