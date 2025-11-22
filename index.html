@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فيلين | Velin - تسوق بذكاء</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="container nav-container">
+            <a href="#" class="logo">فيلين <span>.Velin</span></a>
+            <nav>
+                <ul>
+                    <li><a href="#hero">الرئيسية</a></li>
+                    <li><a href="#products-section">المنتجات</a></li>
+                    <li><a href="#features">المميزات</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero" id="hero">
+        <div class="container hero-content">
+            <div class="hero-text">
+                <h1>أحدث صيحات الموضة في <span class="highlight">فيلين</span></h1>
+                <p>تصفح مجموعتنا الجديدة والحصرية مباشرة من التطبيق.</p>
+                <div class="hero-btns">
+                    <a href="#products-section" class="btn btn-primary">تصفح المنتجات</a>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="https://pajxormplmloivyankji.supabase.co/storage/v1/object/public/hijabat/VelinLogo.png" alt="صورة تطبيق فيلين">
+            </div>
+        </div>
+    </section>
+
+    <section class="products-section" id="products-section">
+        <div class="container">
+            <h2 class="section-title">منتجاتنا المميزة</h2>
+            <div id="products-grid" class="products-grid">
+                <div class="loading-spinner">جاري الاتصال بـ Supabase...</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="section-title">لماذا فيلين؟</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fa-solid fa-rocket"></i>
+                    <h3>سرعة فائقة</h3>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <h3>أمان وحماية</h3>
+                </div>
+                <div class="feature-card">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <h3>تصميم عصري</h3>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <div class="container footer-content">
+            <div class="footer-logo">
+                <h2>فيلين .Velin</h2>
+                <p>جميع الحقوق محفوظة © 2024</p>
+            </div>
+        </div>
+    </footer>
+<div id="orderModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2>طلب منتج</h2>
+            <p id="modal-product-name" style="color: var(--primary-color); font-weight: bold; margin-bottom: 15px;"></p>
+            
+            <form id="orderForm">
+                <div class="form-group">
+                    <label>الاسم الكامل</label>
+                    <input type="text" id="customer_name" required placeholder="أدخل اسمك هنا">
+                </div>
+                <div class="form-group">
+                    <label>رقم الهاتف</label>
+                    <input type="tel" id="customer_phone" required placeholder="07xxxxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label>العنوان بالتفصيل</label>
+                    <textarea id="customer_address" rows="3" required placeholder="المحافظة، المنطقة، أقرب نقطة دالة"></textarea>
+                </div>
+                <input type="hidden" id="hidden_product_name">
+                <input type="hidden" id="hidden_product_price">
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">تأكيد الطلب</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+    <script src="script.js"></script>
+</body>
+</html>
