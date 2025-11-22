@@ -141,41 +141,43 @@
         });
 
         // 1. جلب المنتجات
-        async function fetchProducts() {
-            if (isLoading || !hasMore) return;
-            isLoading = true;
-            document.querySelector('#sentinel .loader').style.display = 'block';
+   // 1. جلب المنتجات (تم تعديلها لتجلب فقط ما هو أكبر من صفر)
+async function fetchProducts() {
+    if (isLoading || !hasMore) return;
+    isLoading = true;
+    
+    // إظهار اللودر
+    const loader = document.querySelector('#sentinel .loader');
+    if(loader) loader.style.display = 'block';
 
-            try {
-                let { data, error } = await supabase
-                    .from('products')
-                    .select('*')
-                    .gt('stock', 0)
-                    .range(offset, offset + limit - 1)
-                    .order('id', { ascending: false });
+    try {
+        let { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .gt('stock', 0) // ✅ هذا السطر هو المسؤول (stock أكبر من 0)
+            .range(offset, offset + limit - 1)
+            .order('id', { ascending: false });
 
-                if (error) throw error;
+        if (error) throw error;
 
-                if (data.length < limit) {
-                    hasMore = false;
-                    document.getElementById('end-msg').style.display = 'block';
-                    document.getElementById('sentinel').style.display = 'none';
-                }
-
-                if (data.length > 0) {
-                    renderProducts(data);
-                    offset += limit;
-                }
-            } catch (err) {
-                console.error("Error:", err);
-            } finally {
-                isLoading = false;
-                // إخفاء اللودر فقط، العنصر يبقى ليعمل السكرول
-                const loader = document.querySelector('#sentinel .loader');
-                if(loader) loader.style.display = 'none';
-            }
+        if (data.length < limit) {
+            hasMore = false;
+            document.getElementById('end-msg').style.display = 'block';
+            document.getElementById('sentinel').style.display = 'none';
         }
 
+        if (data.length > 0) {
+            renderProducts(data);
+            offset += limit;
+        }
+    } catch (err) {
+        console.error("Error fetching products:", err);
+    } finally {
+        isLoading = false;
+        if(loader) loader.style.display = 'none';
+    }
+}
+        /////////////////////////////////////////////////////////
         function renderProducts(products) {
             const grid = document.getElementById('products-grid');
             products.forEach(p => {
@@ -269,45 +271,80 @@
         }
 
         // 4. إرسال الطلب
-        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            btn.disabled = true; 
-            btn.innerText = "جاري الإرسال...";
+       // 4. إرسال الطلب (تم التعديل ليخصم من المخزون)
+// 4. إرسال الطلب (تم التصحيح لتنسيق البيانات وخصم المخزون)
+document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    const originalBtnText = btn.innerText;
+    btn.disabled = true; 
+    btn.innerText = "جاري الإرسال...";
 
-            const productsTotal = cart.reduce((sum, item) => sum + item.price, 0);
-            const finalPrice = productsTotal + DELIVERY_FEE;
+    try {
+        // 1️⃣ حساب المجموع الكلي
+        const productsTotal = cart.reduce((sum, item) => sum + item.price, 0);
+        const finalPrice = productsTotal + DELIVERY_FEE;
 
-            // تحويل السلة لكائن
-            const cartAsObject = {};
-            cart.forEach((item, index) => { cartAsObject[index] = item.product_id; });
-
-            const orderPayload = {
-                customer_name: document.getElementById('c_name').value,
-                customer_phone: document.getElementById('c_phone').value,
-                customer_address: document.getElementById('c_address').value,
-                price: finalPrice, 
-                cart_items: cartAsObject,
-                status: 'new'
-            };
-
-            try {
-                const { error } = await supabase.from('orders').insert([orderPayload]);
-                if (error) throw error;
-
-                alert('تم الطلب بنجاح!');
-                cart = [];
-                saveCart();
-                updateCartUI();
-                toggleCart();
-                location.reload();
-            } catch (err) {
-                console.error(err);
-                alert('حدث خطأ، حاول مرة أخرى');
-                btn.disabled = false;
-                btn.innerText = "تأكيد الطلب";
+        // 2️⃣ تجهيز هيكل البيانات الصحيح { "product_id": quantity }
+        // هذا الكود يحول السلة من مصفوفة عادية إلى كائن يحسب عدد القطع لكل منتج
+        // النتيجة ستكون مثل: { "160": 1, "205": 3 }
+        const cartQuantities = {};
+        cart.forEach(item => {
+            const id = item.product_id;
+            if (cartQuantities[id]) {
+                cartQuantities[id] += 1; // زيادة الكمية إذا المنتج موجود
+            } else {
+                cartQuantities[id] = 1; // بداية العد بـ 1
             }
         });
+
+        // تجهيز بيانات الطلب للإرسال لقاعدة البيانات
+        const orderPayload = {
+            customer_name: document.getElementById('c_name').value,
+            customer_phone: document.getElementById('c_phone').value,
+            customer_address: document.getElementById('c_address').value,
+            price: finalPrice, 
+            cart_items: cartQuantities, // ✅ الآن سيتم حفظها بالشكل الصحيح {"160": 1}
+            status: 'new'
+        };
+
+        // 3️⃣ إدراج الطلب في جدول orders
+        const { error: orderError } = await supabase.from('orders').insert([orderPayload]);
+        if (orderError) throw orderError;
+
+        // 4️⃣ خصم المخزون (استدعاء الدالة stock_dcreased)
+        // نرسل نفس الكائن cartQuantities للدالة لتقوم بالخصم
+        const { error: stockError } = await supabase.rpc('stock_dcreased', { 
+            cart_items: cartQuantities 
+        });
+
+        if (stockError) {
+            console.error("Warning: Stock deduction failed", stockError);
+            // لا نوقف العملية هنا لأن الطلب تم تسجيله بالفعل
+        }
+
+        // 5️⃣ إتمام العملية بنجاح
+        alert('تم الطلب بنجاح!');
+        
+        // تنظيف السلة
+        cart = [];
+        saveCart();
+        updateCartUI();
+        toggleCart(); // إغلاق السلة
+        
+        // إعادة تعيين النموذج
+        e.target.reset();
+        document.getElementById('checkout-form').style.display = 'none';
+        document.getElementById('checkout-btn').style.display = 'block';
+
+    } catch (err) {
+        console.error(err);
+        alert('حدث خطأ أثناء إرسال الطلب، يرجى المحاولة مرة أخرى.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = originalBtnText;
+    }
+});
     </script>
 </body>
 </html>
