@@ -46,7 +46,7 @@
         if(catName) document.getElementById('page-title').innerText = catName;
 
         async function loadProducts() {
-            let query = supabase.from('products').select('*').gt('stock', 0);
+            let query = supabase.from('products').select('*').gt('stock', 0).order('id', { ascending: false });
             
             // إذا يوجد معرف قسم، فلتر النتائج
             if(catId) query = query.eq('category_id', catId);
@@ -75,4 +75,5 @@
         loadProducts();
     </script>
 </body>
+
 </html>
