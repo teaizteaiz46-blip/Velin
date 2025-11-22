@@ -1,7 +1,7 @@
-// ⚠️ 1. إعدادات الاتصال (انسخها من لوحة تحكم Supabase -> Settings -> API)
-const SUPABASE_URL = 'https://pajxormplmloivyankji.supabase.co'; // ضع رابطك هنا
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhanhvcm1wbG1sb2l2eWFua2ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODQ3OTksImV4cCI6MjA3NjA2MDc5OX0.eEPB_Gt5HywU9oGNXLpSNc4IA7CTTL7CX-EMKDE3yec'; // ضع مفتاح anon/public هنا
 // ⚠️ إعدادات Supabase (نفس مفاتيحك السابقة)
+const SUPABASE_URL = 'https://pajxormplmloivyankji.supabase.co'; 
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhanhvcm1wbG1sb2l2eWFua2ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODQ3OTksImV4cCI6MjA3NjA2MDc5OX0.eEPB_Gt5HywU9oGNXLpSNc4IA7CTTL7CX-EMKDE3yec'; 
+
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- 1. إدارة السلة (Cart Logic) ---
@@ -10,20 +10,20 @@ let cart = JSON.parse(localStorage.getItem('velin_cart')) || [];
 // تحديث أيقونة السلة عند التحميل
 updateCartUI();
 
-// دالة إضافة للسلة
-function addToCart(name, price) {
-    const product = { name, price, id: Date.now() }; // id مميز لكل قطعة
+// دالة إضافة للسلة (قمنا بتعديلها لتستقبل معرف المنتج الأصلي id)
+function addToCart(id, name, price) {
+    // تخزين المنتج مع الاحتفاظ بمعرفه الأصلي في قاعدة البيانات (productId)
+    const product = { productId: id, name, price, cartId: Date.now() }; 
     cart.push(product);
     saveCart();
     updateCartUI();
     
-    // تنبيه بسيط
     alert('تمت إضافة ' + name + ' إلى السلة');
 }
 
 // حذف من السلة
-function removeFromCart(id) {
-    cart = cart.filter(item => item.id !== id);
+function removeFromCart(cartId) {
+    cart = cart.filter(item => item.cartId !== cartId);
     saveCart();
     updateCartUI();
 }
@@ -35,10 +35,8 @@ function saveCart() {
 
 // تحديث الواجهة (الرقم والقائمة)
 function updateCartUI() {
-    // 1. تحديث الرقم الأحمر
     document.getElementById('cart-count').innerText = cart.length;
 
-    // 2. تحديث قائمة المنتجات داخل النافذة
     const cartContainer = document.getElementById('cart-items');
     const totalPriceEl = document.getElementById('total-price');
     const checkoutBtn = document.getElementById('show-checkout-btn');
@@ -48,10 +46,9 @@ function updateCartUI() {
 
     if (cart.length === 0) {
         cartContainer.innerHTML = '<p class="empty-msg">السلة فارغة، أضيفي بعض المنتجات!</p>';
-        checkoutBtn.style.display = 'none';
+        if(checkoutBtn) checkoutBtn.style.display = 'none';
     } else {
         cart.forEach(item => {
-            // تحويل السعر لرقم للجمع
             let priceNum = parseFloat(item.price.replace(/[^0-9.-]+/g,""));
             total += priceNum;
 
@@ -61,26 +58,22 @@ function updateCartUI() {
                         <h4>${item.name}</h4>
                         <p>${item.price} د.ع</p>
                     </div>
-                    <span class="remove-item" onclick="removeFromCart(${item.id})">
+                    <span class="remove-item" onclick="removeFromCart(${item.cartId})">
                         <i class="fa-solid fa-trash"></i>
                     </span>
                 </div>
             `;
         });
-        checkoutBtn.style.display = 'block';
+        if(checkoutBtn) checkoutBtn.style.display = 'block';
     }
 
-    totalPriceEl.innerText = total.toLocaleString() + ' د.ع';
+    if(totalPriceEl) totalPriceEl.innerText = total.toLocaleString() + ' د.ع';
 }
 
 // فتح وإغلاق السلة
 function toggleCart() {
     const modal = document.getElementById('cartModal');
-    if (modal.style.display === 'flex') {
-        modal.style.display = 'none';
-    } else {
-        modal.style.display = 'flex';
-    }
+    modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
 }
 
 function showCheckout() {
@@ -89,30 +82,37 @@ function showCheckout() {
 }
 
 
-// --- 2. دالة جلب المنتجات ---
+// --- 2. دالة جلب المنتجات (تعديل: إخفاء المنتجات المنتهية) ---
 async function fetchProducts() {
     const productsContainer = document.getElementById('products-grid');
     
     try {
         let { data: products, error } = await supabase
             .from('products')
-            .select('*');
+            .select('*')
+            .gt('stock', 0); // ⚠️ هذا السطر السحري: يجلب فقط المنتجات التي مخزونها أكبر من 0
 
         if (error) throw error;
 
         productsContainer.innerHTML = '';
 
+        if (!products || products.length === 0) {
+            productsContainer.innerHTML = '<p>جميع المنتجات نفدت حالياً!</p>';
+            return;
+        }
+
         products.forEach(product => {
             const imageUrl = product.image_url || 'https://via.placeholder.com/250';
             
-            // زر "أضف للسلة" بدلاً من "اطلب الآن"
+            // نمرر product.id للدالة حتى نعرف أي منتج سننقص من مخزونه
             const productHTML = `
                 <div class="product-card">
                     <img src="${imageUrl}" alt="${product.name}" class="product-image">
                     <div class="product-info">
                         <h3 class="product-title">${product.name}</h3>
                         <p class="product-price">${product.price} د.ع</p>
-                        <button onclick="addToCart('${product.name}', '${product.price}')" class="btn btn-primary w-100">
+                        <p style="font-size:0.8rem; color:#777;">المتبقي: ${product.stock} قطعة</p>
+                        <button onclick="addToCart(${product.id}, '${product.name}', '${product.price}')" class="btn btn-primary w-100">
                             أضف للسلة <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
@@ -127,15 +127,14 @@ async function fetchProducts() {
     }
 }
 
-// --- 3. إرسال الطلب (المنتجات كلها مرة واحدة) ---
+// --- 3. إرسال الطلب وإنقاص المخزون ---
 document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const btn = e.target.querySelector('button');
-    btn.innerText = "جاري الإرسال...";
+    btn.innerText = "جاري المعالجة...";
     btn.disabled = true;
 
-    // تحويل قائمة المنتجات إلى نص واحد (مثلاً: حجاب x2, عباية x1)
     const productSummary = cart.map(item => item.name).join(" + ");
     const totalPrice = document.getElementById('total-price').innerText;
 
@@ -143,32 +142,45 @@ document.getElementById('checkoutForm').addEventListener('submit', async functio
         customer_name: document.getElementById('customer_name').value,
         customer_phone: document.getElementById('customer_phone').value,
         customer_address: document.getElementById('customer_address').value,
-        product_name: productSummary, // نرسل كل المنتجات في حقل الاسم
-        price: totalPrice,            // نرسل المجموع الكلي
+        product_name: productSummary,
+        price: totalPrice,
     };
 
     try {
-        const { error } = await supabase
+        // 1. تسجيل الطلب في جدول الطلبات
+        const { error: orderError } = await supabase
             .from('orders')
             .insert([orderData]);
 
-        if (error) throw error;
+        if (orderError) throw orderError;
 
-        alert("تم استلام طلبك بنجاح! شكراً لتسوقك مع فيلين.");
+        // 2. إنقاص المخزون لكل منتج في السلة
+        // نستخدم حلقة تكرار لاستدعاء الدالة التي أنشأناها في قاعدة البيانات
+        for (const item of cart) {
+            const { error: rpcError } = await supabase
+                .rpc('decrease_stock', { row_id: item.productId });
+            
+            if (rpcError) console.error("خطأ في إنقاص المخزون للمنتج:", item.name, rpcError);
+        }
+
+        alert("تم الطلب بنجاح! سيتم توصيل طلبيتك قريباً.");
         
-        // تفريغ السلة
+        // تفريغ السلة وإعادة التوجيه
         cart = [];
         saveCart();
         updateCartUI();
-        toggleCart(); // إغلاق النافذة
+        toggleCart();
         e.target.reset(); 
         document.getElementById('checkoutForm').style.display = 'none';
+        
+        // إعادة تحميل المنتجات لتحديث أرقام المخزون في الصفحة
+        fetchProducts();
 
     } catch (err) {
-        console.error("Order Error:", err);
-        alert("حدث خطأ، يرجى المحاولة مرة أخرى.");
+        console.error("Checkout Error:", err);
+        alert("حدث خطأ أثناء الطلب، يرجى المحاولة مرة أخرى.");
     } finally {
-        btn.innerText = "تأكيد الطلب";
+        btn.innerText = "تأكيد الطلب (دفع عند الاستلام)";
         btn.disabled = false;
     }
 });
