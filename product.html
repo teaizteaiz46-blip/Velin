@@ -93,6 +93,19 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
                 document.getElementById('p-price').innerText = Number(data.price).toLocaleString() + ' د.ع';
                 document.getElementById('p-desc').innerText = data.description || 'لا يوجد وصف';
                 document.getElementById('p-stock').innerText = data.stock > 0 ? `متوفر: ${data.stock}` : 'نفذت الكمية';
+                ttq.track('ViewContent', {
+	"contents": [
+		{
+			"content_id": "<content_identifier>", // string. ID of the product. Example: "1077218".
+			"content_type": "<content_type>", // string. Either product or product_group.
+			"content_name": "<content_name>" // string. The name of the page or product. Example: "shirt".
+		}
+	],
+	"value": "<content_value>", // number. Value of the order or items sold. Example: 100.
+	"currency": "<content_currency>" // string. The 4217 currency code. Example: "USD".
+}, {
+	"event_id": "<event_id>" // string. A hashed ID that can identify a unique event. Example: "1616318632825_357".
+});
             }
         }
 
@@ -123,5 +136,6 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
 </body>
 
 </html>
+
 
 
