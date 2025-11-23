@@ -120,6 +120,32 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
                 temp_id: Date.now()
             });
             localStorage.setItem('velin_cart', JSON.stringify(cart));
+
+			// 🔥 TikTok Pixel: تفعيل حدث الإضافة للسلة (AddToCart)
+            if (window.ttq) {
+                ttq.track('AddToCart', {
+                    contents: [{
+                        content_id: currentProduct.id.toString(),
+                        content_type: 'product',
+                        content_name: currentProduct.name
+                    }],
+                    value: Number(currentProduct.price),
+                    currency: 'IQD'
+                });
+
+                // إذا كان الزر هو "شراء الآن"، نرسل حدث بدء الدفع أيضاً (InitiateCheckout)
+                if(redirect) {
+                    ttq.track('InitiateCheckout', {
+                        contents: [{
+                            content_id: currentProduct.id.toString(),
+                            content_type: 'product',
+                            content_name: currentProduct.name
+                        }],
+                        value: Number(currentProduct.price),
+                        currency: 'IQD'
+                    });
+                }
+            }
             
             if(redirect) {
                 // هنا يمكنك توجيهه لصفحة "الدفع" Checkout (يمكنك إنشاؤها لاحقاً)
@@ -136,6 +162,7 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
 </body>
 
 </html>
+
 
 
 
