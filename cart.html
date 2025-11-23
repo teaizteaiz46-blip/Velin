@@ -79,6 +79,15 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
         <div class="section-title"><i class="fa-solid fa-truck-fast" style="color:var(--primary);"></i> معلومات التوصيل</div>
         <input type="text" id="c_name" class="form-input" placeholder="الاسم الثلاثي" required>
         <input type="tel" id="c_phone" class="form-input" placeholder="رقم الهاتف (مع المفتاح)" required>
+        <div class="checkout-section" id="shipping-form" style="display: none;">
+    <div class="section-title"><i class="fa-solid fa-truck-fast" style="color:var(--primary);"></i> معلومات التوصيل</div>
+    
+    <input type="email" id="c_email" class="form-input" placeholder="البريد الإلكتروني (للتأكيد وتتبع الطلب)">
+    
+    <input type="text" id="c_name" class="form-input" placeholder="الاسم الثلاثي" required>
+    <input type="tel" id="c_phone" class="form-input" placeholder="رقم الهاتف (مع المفتاح)" required>
+    <textarea id="c_address" class="form-input" rows="2" placeholder="العنوان الكامل (المحافظة، المنطقة، أقرب نقطة دالة)" required></textarea>
+</div>
         <textarea id="c_address" class="form-input" rows="2" placeholder="العنوان الكامل (المحافظة، المنطقة، أقرب نقطة دالة)" required></textarea>
     </div>
 
@@ -180,6 +189,7 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
                 const orderData = {
                     customer_name: name,
                     customer_phone: phone,
+                    customer_email: email, // تخزين البريد إذا وجد
                     customer_address: address,
                     price: totalPrice,
                     cart_items: cartCounts,
@@ -256,6 +266,7 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
 </body>
 
 </html>
+
 
 
 
