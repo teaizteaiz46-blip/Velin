@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام التجهيز - VELIN</title>
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        #login-container, #packer-container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        #packer-container { display: none; }
+
+        input {
+            width: 100%; padding: 12px; margin-bottom: 15px;
+            border: 2px solid #eee; border-radius: 6px;
+            font-size: 18px; text-align: center; box-sizing: border-box;
+        }
+        button {
+            background-color: #FFA500; color: white; padding: 12px 20px;
+            border: none; border-radius: 6px; cursor: pointer;
+            font-size: 16px; font-weight: bold; width: 100%;
+            transition: 0.3s;
+        }
+        button:hover { background-color: #e69500; }
+        
+        .view-btn { background-color: #17a2b8; width: auto; padding: 8px 15px; font-size: 14px; }
+        .refresh-btn { background-color: #6c757d; width: auto; float: left; margin-bottom: 10px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: center; vertical-align: middle; }
+        th { background-color: #fff3cd; color: #856404; font-size: 14px; }
+
+        /* Modal Styles */
+        .modal {
+            display: none; position: fixed; z-index: 1000; 
+            left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px);
+        }
+        .modal-content {
+            background-color: #fff; margin: 5% auto; padding: 20px;
+            border-radius: 10px; width: 95%; max-width: 600px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            position: relative; max-height: 90vh; overflow-y: auto;
+        }
+        .close-modal {
+            position: absolute; left: 15px; top: 10px;
+            font-size: 28px; cursor: pointer; color: #aaa;
+        }
+        
+        .item-card {
+            display: flex; align-items: center;
+            background: #f9f9f9; border: 1px solid #eee;
+            margin-bottom: 10px; padding: 10px; border-radius: 8px;
+        }
+        .item-img {
+            width: 60px; height: 60px; 
+            object-fit: cover; border-radius: 6px; border: 1px solid #ccc;
+            margin-left: 15px; background-color: #eee;
+            cursor: zoom-in; /* إشارة للمستخدم أن الصورة قابلة للتكبير */
+            transition: transform 0.2s;
+        }
+        .item-img:hover { transform: scale(1.05); }
+
+        .item-details { flex-grow: 1; text-align: right; }
+        .item-qty {
+            background: #FFA500; color: white; 
+            padding: 4px 10px; border-radius: 15px; font-weight: bold; font-size: 14px;
+        }
+        .pack-confirm-btn {
+            background-color: #28a745; margin-top: 15px; font-size: 18px; padding: 15px;
+        }
+
+        /* --- تنسيقات عارض الصور الجديد --- */
+        #image-viewer {
+            display: none; position: fixed; z-index: 2000; /* أعلى من المودال العادي */
+            padding-top: 50px; left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.9); /* خلفية سوداء داكنة */
+        }
+        .viewer-content {
+            margin: auto; display: block; width: 80%; max-width: 700px; max-height: 80vh;
+            object-fit: contain; border-radius: 5px;
+            animation-name: zoom; animation-duration: 0.3s;
+        }
+        .close-viewer {
+            position: absolute; top: 15px; right: 35px;
+            color: #f1f1f1; font-size: 40px; font-weight: bold;
+            transition: 0.3s; cursor: pointer;
+        }
+        .close-viewer:hover { color: #bbb; }
+        @keyframes zoom {
+            from {transform:scale(0)} to {transform:scale(1)}
+        }
+    </style>
+</head>
+<body>
+
+    <div id="image-viewer" onclick="closeImageViewer()">
+        <span class="close-viewer">&times;</span>
+        <img class="viewer-content" id="full-image">
+    </div>
+
+    <div id="loading-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction:column;">
+        <h3 style="color:#FFA500">جاري الاتصال بالنظام...</h3>
+        <p id="loading-error" style="color:red; display:none;">فشل تحميل المكتبة. تأكد من الإنترنت.</p>
+    </div>
+
+    <div id="login-container" style="display:none;">
+        <h2 style="color:#FFA500; text-align:center;">دخول المجهز (Packer)</h2>
+        <p style="text-align:center; color:#777;"></p>
+        <input type="tel" id="passcode" placeholder="أدخل الرمز هنا" />
+        <button onclick="checkPasscode()">تسجيل الدخول</button>
+    </div>
+
+    <div id="packer-container">
+        <div style="overflow: hidden; margin-bottom:10px;">
+            <h2 style="float: right; margin: 0;">الطلبات الجديدة</h2>
+            <button class="refresh-btn" onclick="loadOrders()">تحديث القائمة ↻</button>
+        </div>
+        
+        <div style="overflow-x: auto;">
+            <table id="orders-table">
+                <thead>
+                    <tr>
+                        <th>رقم الطلب</th>
+                        <th>العميل</th>
+                        <th>المواد</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <p id="status-msg" style="text-align:center; margin-top:30px; color:#888;">جاري التحميل...</p>
+    </div>
+
+    <div id="order-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="modal-title" style="margin-top:0;">تفاصيل الطلب</h2>
+            
+            <div style="background:#eef2f7; padding:15px; border-radius:8px; margin-bottom:20px; font-size:14px;">
+                <strong>العميل:</strong> <span id="modal-customer"></span><br>
+                <strong>الهاتف:</strong> <span id="modal-phone"></span><br>
+                <strong>العنوان:</strong> <span id="modal-address"></span><br>
+                <strong>السعر:</strong> <span id="modal-price" style="color:#28a745; font-weight:bold;"></span>
+            </div>
+
+            <div id="modal-items-list"></div>
+            
+            <details style="margin-top:20px; text-align:left; direction:ltr;">
+                <summary style="font-size:12px; color:#aaa; cursor:pointer;">Show Raw Data</summary>
+                <pre id="raw-data-debug" style="background:#333; color:#0f0; padding:10px; font-size:10px; overflow:auto;"></pre>
+            </details>
+
+            <button id="modal-action-btn" class="pack-confirm-btn">✅ تم تجهيز الطلب</button>
+        </div>
+    </div>
+
+    <script>
+        let supabase = null;
+        let currentOrders = [];
+        
+        window.onload = function() {
+            try {
+                if (window.supabase) {
+                    const SUPABASE_URL = 'https://pajxormplmloivyankji.supabase.co';
+                    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBhanhvcm1wbG1sb2l2eWFua2ppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODQ3OTksImV4cCI6MjA3NjA2MDc5OX0.eEPB_Gt5HywU9oGNXLpSNc4IA7CTTL7CX-EMKDE3yec';
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    document.getElementById('loading-screen').style.display = 'none';
+                    document.getElementById('login-container').style.display = 'block';
+                } else {
+                    throw new Error("Supabase undefined");
+                }
+            } catch (err) {
+                document.getElementById('loading-error').style.display = 'block';
+                console.error("Init Error:", err);
+            }
+        };
+
+        function checkPasscode() {
+            const code = document.getElementById('passcode').value;
+            if(code === "343491"){
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('packer-container').style.display = 'block';
+                loadOrders();
+            } else {
+                alert("رمز المرور خاطئ!");
+            }
+        }
+
+        async function loadOrders() {
+            if(!supabase) return;
+            const tbody = document.querySelector('#orders-table tbody');
+            const msg = document.getElementById('status-msg');
+            tbody.innerHTML = '';
+            msg.style.display = 'block';
+            msg.textContent = 'جاري جلب البيانات...';
+
+            const { data: orders, error } = await supabase
+                .from('orders')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if(error) {
+                msg.textContent = "خطأ: " + error.message; msg.style.color = 'red'; return;
+            }
+
+            currentOrders = orders || []; 
+            if(currentOrders.length === 0) {
+                msg.textContent = "لا توجد طلبات جديدة."; return;
+            }
+
+            msg.style.display = 'none';
+            
+            currentOrders.forEach((order, index) => {
+                let count = 0;
+                try {
+                    let items = order.cart_items;
+                    if (typeof items === 'string') items = JSON.parse(items);
+                    if (items && typeof items === 'object' && !Array.isArray(items)) {
+                        count = Object.keys(items).length;
+                    } else if (Array.isArray(items)) {
+                        count = items.length;
+                    }
+                } catch(e) {}
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${order.id}</td>
+                    <td>${order.customer_name || 'غير معروف'}</td>
+                    <td>${count} مواد</td>
+                    <td><button class="view-btn" onclick="openModal(${index})">👁️ عرض</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function openModal(index) {
+            const order = currentOrders[index];
+            const listContainer = document.getElementById('modal-items-list');
+            
+            document.getElementById('modal-title').innerText = `طلب #${order.id}`;
+            document.getElementById('modal-customer').innerText = order.customer_name || '-';
+            document.getElementById('modal-phone').innerText = order.customer_phone || '-';
+            document.getElementById('modal-address').innerText = order.customer_address || '-';
+            document.getElementById('modal-price').innerText = order.price ? (order.price + ' د.ع') : '-';
+            document.getElementById('raw-data-debug').innerText = JSON.stringify(order.cart_items, null, 2);
+
+            listContainer.innerHTML = '<p style="text-align:center; padding:10px;">جاري تحليل المنتجات...</p>';
+            document.getElementById('order-modal').style.display = 'block';
+
+            let itemsRaw = order.cart_items;
+            try {
+                while (typeof itemsRaw === 'string') { itemsRaw = JSON.parse(itemsRaw); }
+            } catch (e) {}
+
+            let itemsArray = [];
+            // معالجة صيغة {"id": qty}
+            if (itemsRaw && typeof itemsRaw === 'object' && !Array.isArray(itemsRaw)) {
+                itemsArray = Object.entries(itemsRaw).map(([key, value]) => {
+                    return { product_id: key, quantity: value };
+                });
+            } else if (Array.isArray(itemsRaw)) {
+                itemsArray = itemsRaw;
+            }
+
+            if (itemsArray.length === 0) {
+                listContainer.innerHTML = `<p style="color:red; text-align:center;">السلة فارغة</p>`;
+                return;
+            }
+
+            const productIds = itemsArray.map(i => i.product_id || i.id).filter(id => id);
+
+            let productsMap = {};
+            if (productIds.length > 0) {
+                const { data: productsDB, error } = await supabase
+                    .from('products')
+                    .select('id, name, image_url')
+                    .in('id', productIds);
+                
+                if (!error && productsDB) {
+                    productsDB.forEach(p => { productsMap[String(p.id)] = p; });
+                }
+            }
+
+            listContainer.innerHTML = '';
+            
+            itemsArray.forEach(item => {
+                const id = String(item.product_id || item.id);
+                const qty = item.quantity || item.qty || 1;
+                const dbProduct = productsMap[id];
+                
+                const name = dbProduct ? dbProduct.name : `منتج رقم ${id}`;
+                let imgUrl = dbProduct ? dbProduct.image_url : null;
+
+                try {
+                    if (Array.isArray(imgUrl)) imgUrl = imgUrl[0];
+                    if (typeof imgUrl === 'string' && imgUrl.startsWith('[')) imgUrl = JSON.parse(imgUrl)[0];
+                } catch(e) {}
+                
+                if (!imgUrl) imgUrl = 'https://placehold.co/60x60?text=No+Img';
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item-card';
+                // تم إضافة onclick لفتح الصورة الكبيرة
+                itemDiv.innerHTML = `
+                    <img src="${imgUrl}" class="item-img" 
+                         onclick="openImageViewer('${imgUrl}')"
+                         onerror="this.src='https://placehold.co/60x60?text=Err'">
+                    
+                    <div class="item-details">
+                        <div style="font-weight:bold; font-size:16px;">${name}</div>
+                        <div style="font-size:13px; color:#666; margin-top:4px;">
+                            <span>الكمية المطلوبة</span>
+                            <br><span style="font-size:10px; color:#aaa;">ID: ${id}</span>
+                        </div>
+                         ${!dbProduct ? '<div style="color:red; font-size:10px;">* غير موجود في قاعدة البيانات</div>' : ''}
+                    </div>
+                    <div class="item-qty">x${qty}</div>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+
+            const btn = document.getElementById('modal-action-btn');
+            btn.innerText = "✅ تم تجهيز الطلب";
+            btn.disabled = false;
+            btn.onclick = function() { markAsPacked(order.id); };
+        }
+
+        function closeModal() {
+            document.getElementById('order-modal').style.display = 'none';
+        }
+
+        // --- دوال عارض الصور ---
+        function openImageViewer(src) {
+            const viewer = document.getElementById('image-viewer');
+            const fullImage = document.getElementById('full-image');
+            fullImage.src = src;
+            viewer.style.display = 'flex'; // استخدام flex للمحاذاة في المنتصف
+        }
+
+        function closeImageViewer() {
+            document.getElementById('image-viewer').style.display = 'none';
+        }
+
+        async function markAsPacked(id) {
+            if(!supabase) return;
+            if(!confirm("هل تم تجهيز الطلب بالكامل؟")) return;
+            const btn = document.getElementById('modal-action-btn');
+            btn.innerText = "جاري الحفظ..."; btn.disabled = true;
+
+            const { error } = await supabase.from('orders').update({ status: 'مجهز' }).eq('id', id);
+            if(error) {
+                alert("فشل: " + error.message);
+                btn.disabled = false;
+            } else {
+                closeModal();
+                loadOrders();
+            }
+        }
+        
+        document.getElementById('passcode').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') checkPasscode();
+        });
+        
+        // إغلاق المودال عند النقر في الفراغ، لكن ليس عند النقر على الصورة
+        window.onclick = function(e) {
+            if(e.target == document.getElementById('order-modal')) closeModal();
+        }
+    </script>
+</body>
+</html>
