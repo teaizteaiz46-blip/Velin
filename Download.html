@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحميل تطبيق Velin - تطبيقك الاحترافي</title>
+    
+    <style>
+        /* الخطوط والأساسيات */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        
+        /* تصميم صندوق المحتوى الرئيسي */
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            width: 90%;
+            direction: rtl; /* لضمان الاتجاه الصحيح للنص العربي */
+        }
+        
+        /* تصميم شعار التطبيق (الصورة) */
+        .app-logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* العناوين والنصوص */
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+        p {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        /* حاوية الأزرار لترتيبها بشكل عمودي */
+        .button-group {
+            display: flex;
+            flex-direction: column; /* الأزرار تكون فوق بعض */
+            gap: 15px;
+        }
+        
+        /* تصميم الأزرار الأساسي */
+        .download-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .download-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* تصميم زر Google Play */
+        .google-play {
+            background-color: #3f51b5; /* لون Google Play */
+            color: white;
+        }
+        
+        /* تصميم زر App Store */
+        .app-store {
+            background-color: #007aff; /* لون Apple */
+            color: white;
+        }
+        
+        /* تصميم أيقونات المتاجر داخل الزر */
+        .store-icon {
+            width: 24px;
+            height: 24px;
+            margin-left: 10px; /* المسافة بين الأيقونة والنص */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <img src="https://via.placeholder.com/100" alt="شعار تطبيق Velin" class="app-logo">
+        
+        <h1>تطبيق Velin جاهز للتحميل!</h1>
+        <p>اكتشف أقوى ميزات تطبيقنا على جهازك. تجربة سلسة تبدأ الآن.</p>
+
+        <div class="button-group">
+            
+            <a href="https://play.google.com/store/apps/details?id=iq.ameerazax.velin&pcampaignid=web_share" target="_blank" class="download-button google-play">
+                تحميل من Google Play
+                <svg class="store-icon" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm0-22c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 18c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm-4.75-8.25l7.5-3.75-7.5-3.75v7.5z"/></svg>
+            </a>
+
+            <a href="https://apps.apple.com/us/app/velin/id6754703322" target="_blank" class="download-button app-store">
+                تحميل من App Store
+                <svg class="store-icon" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M16 11.25a.75.75 0 0 1-.75.75H8.75a.75.75 0 0 1 0-1.5h6.5a.75.75 0 0 1 .75.75zM12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm0-22c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 18c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z"/></svg>
+            </a>
+            
+        </div>
+    </div>
+
+</body>
+</html>
