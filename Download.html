@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحميل تطبيق Velin - تطبيقك الاحترافي</title>
+    <title>تحميل تطبيق VELIN - تطبيقك الاحترافي</title>
     
     <style>
         /* الخطوط والأساسيات */
@@ -54,7 +54,7 @@
         .button-group {
             display: flex;
             flex-direction: column; /* الأزرار تكون فوق بعض */
-            gap: 15px;
+            gap: 30px;
         }
         
         /* تصميم الأزرار الأساسي */
@@ -77,13 +77,13 @@
         
         /* تصميم زر Google Play */
         .google-play {
-            background-color: #3f51b5; /* لون Google Play */
+            background-color: #ff6200; /* لون Google Play */
             color: white;
         }
         
         /* تصميم زر App Store */
         .app-store {
-            background-color: #007aff; /* لون Apple */
+            background-color: #ff6200; /* لون Apple */
             color: white;
         }
         
@@ -91,7 +91,11 @@
         .store-icon {
             width: 24px;
             height: 24px;
-            margin-left: 10px; /* المسافة بين الأيقونة والنص */
+            /* (1) نزيل الهامش القديم */
+    margin-left: 0; 
+    
+    /* (2) نطبق هامشاً على اليمين (Margin-Right) لدفع الأيقونة نحو اليسار وتقريبها من النص */
+    margin-right: 10px; /* يمكنك زيادة هذا الرقم (مثلاً 15px) لزيادة المسافة والدفع لليسار */
         }
     </style>
 </head>
@@ -99,21 +103,25 @@
 
     <div class="container">
         
-        <img src="https://via.placeholder.com/100" alt="شعار تطبيق Velin" class="app-logo">
+        <img src="https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/bf/72/63/bf7263c9-23a1-1844-5a64-adada3ad6a2d/Placeholder.mill/400x400bb-75.webp" alt="شعار تطبيق Velin" class="app-logo">
         
-        <h1>تطبيق Velin جاهز للتحميل!</h1>
+        <h1>تطبيق VELIN جاهز للتحميل!</h1>
         <p>اكتشف أقوى ميزات تطبيقنا على جهازك. تجربة سلسة تبدأ الآن.</p>
 
         <div class="button-group">
             
-            <a href="https://play.google.com/store/apps/details?id=iq.ameerazax.velin&pcampaignid=web_share" target="_blank" class="download-button google-play">
+           <a href="https://play.google.com/store/apps/details?id=iq.ameerazax.velin&pcampaignid=web_share" target="_blank" class="download-button google-play">
                 تحميل من Google Play
-                <svg class="store-icon" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm0-22c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 18c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm-4.75-8.25l7.5-3.75-7.5-3.75v7.5z"/></svg>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_Play_2022_icon.svg/1856px-Google_Play_2022_icon.svg.png" alt="Google Play Icon" class="store-icon">
             </a>
 
             <a href="https://apps.apple.com/us/app/velin/id6754703322" target="_blank" class="download-button app-store">
                 تحميل من App Store
-                <svg class="store-icon" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M16 11.25a.75.75 0 0 1-.75.75H8.75a.75.75 0 0 1 0-1.5h6.5a.75.75 0 0 1 .75.75zM12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12zm0-22c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 18c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z"/></svg>
+                <img src="https://www.svgrepo.com/show/353415/apple-app-store.svg" alt="App Store Icon" class="store-icon">
+            </a>
+              <a href="Velin.cc" target="_blank" class="download-button google-play">
+                الموقع الالكتروني
+                <img src="" alt="Google Play Icon" class="store-icon">
             </a>
             
         </div>
